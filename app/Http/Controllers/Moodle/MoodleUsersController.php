@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Moodle;
 use App\Http\Controllers\Controller;
 use App\Models\MoodleUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MoodleUsersController extends Controller
 {
@@ -20,7 +21,7 @@ class MoodleUsersController extends Controller
             'lastname' => 'required|string',
             'username' => 'required|string',
             'password' => 'required|string',
-            'email' => 'required|email'
+            'email' => 'nullable|email'
         ]);
 
         try {
@@ -28,7 +29,13 @@ class MoodleUsersController extends Controller
             $validated['confirmed'] = 1;
             $validated['mnethostid'] = 1;
 
-            $this->moodleUser->create($validated);
+            $user = $this->moodleUser->create($validated);
+            DB::table('mdl_user_preferences')->insert([
+                'userId' => $user->id,
+                'name' => 'auth_forcepasswordchange',
+                'value' => "1"
+            ]);
+
             return response()->json([
                 'status' => true,
                 'message' => 'User successfully saved to Moodle'
